@@ -21,6 +21,10 @@
             --font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
             --sum-background: #f0f0f0;
             --sum-text: #333333;
+            --current-sum-background: #e6f7ff;
+            --current-sum-text: #0066cc;
+            --mismatch-sum-background: #ffebeb;
+            --mismatch-sum-text: #cc0000;
         }
 
         body {
@@ -40,7 +44,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            max-width: 500px;
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
             padding-left: 1rem;
@@ -74,7 +78,7 @@
 
         /* Game container */
         .game-container {
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -115,10 +119,33 @@
             font-size: 1.2rem;
         }
 
+        /* Current sum cells styling */
+        #game-board td.current-sum-cell {
+            background-color: var(--current-sum-background);
+            color: var(--current-sum-text);
+            font-size: 1.2rem;
+        }
+
+        /* Mismatch sum styling */
+        #game-board td.mismatch-sum {
+            background-color: var(--mismatch-sum-background);
+            color: var(--mismatch-sum-text);
+        }
+
         /* Empty cell for top-left corner */
         #game-board td.corner-cell {
             background-color: #e5e5e5;
             border: none;
+            font-size: 0.8rem;
+            font-weight: normal;
+        }
+
+        /* Bottom-right corner cell */
+        #game-board td.current-corner-cell {
+            background-color: #d1eaff;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: normal;
         }
 
         /* Number buttons */
@@ -357,14 +384,19 @@
         }
 
         /* Responsive design */
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
             .game-container {
                 padding: 5px;
             }
 
             #game-board td {
-                font-size: 1.25rem;
+                font-size: 1.1rem;
                 height: 40px;
+            }
+
+            #game-board td.corner-cell,
+            #game-board td.current-corner-cell {
+                font-size: 0.6rem;
             }
 
             .number-button {
@@ -463,6 +495,8 @@
             selectedCell: null,
             rowSums: [],
             colSums: [],
+            currentRowSums: [],
+            currentColSums: [],
             filledPositions: 0
         };
 
@@ -487,6 +521,8 @@
             state.originalGrid = [];
             state.rowSums = [];
             state.colSums = [];
+            state.currentRowSums = [];
+            state.currentColSums = [];
             state.locsToBlankX = [];
             state.locsToBlankY = [];
             state.removedDigits = [];
@@ -511,6 +547,9 @@
             // Remove 5 random digits
             removeRandomDigits();
             
+            // Calculate current sums
+            calculateCurrentSums();
+            
             // Update the display
             updateGridDisplay();
             
@@ -533,6 +572,33 @@
                     sum += state.grid[row][col];
                 }
                 state.colSums.push(sum);
+            }
+        }
+
+        // Calculate current sums (accounting for blanks)
+        function calculateCurrentSums() {
+            // Calculate current row sums
+            state.currentRowSums = [];
+            for (let row = 0; row < 5; row++) {
+                let sum = 0;
+                for (let col = 0; col < 5; col++) {
+                    if (state.grid[row][col] !== ' ') {
+                        sum += Number(state.grid[row][col]);
+                    }
+                }
+                state.currentRowSums.push(sum);
+            }
+            
+            // Calculate current column sums
+            state.currentColSums = [];
+            for (let col = 0; col < 5; col++) {
+                let sum = 0;
+                for (let row = 0; row < 5; row++) {
+                    if (state.grid[row][col] !== ' ') {
+                        sum += Number(state.grid[row][col]);
+                    }
+                }
+                state.currentColSums.push(sum);
             }
         }
 
@@ -583,29 +649,61 @@
         function updateGridDisplay() {
             elements.gridboard.innerHTML = '';
             
-            // Create table with 6x6 dimensions (5x5 grid + row/col sums)
-            for (let i = 0; i < 6; i++) {
+            // Create table with 7x7 dimensions (5x5 grid + row/col sums + current sums)
+            for (let i = 0; i < 7; i++) {
                 const row = document.createElement('tr');
                 
-                for (let j = 0; j < 6; j++) {
+                for (let j = 0; j < 7; j++) {
                     const cell = document.createElement('td');
                     
-                    // Top left corner cell
+                    // Top left corner cell - "Target Sums"
                     if (i === 0 && j === 0) {
+                        cell.textContent = "Target Sums";
                         cell.classList.add('corner-cell');
                     }
-                    // Column sum cells (top row)
-                    else if (i === 0) {
+                    // Bottom right corner cell - "Current Sums"
+                    else if (i === 6 && j === 6) {
+                        cell.textContent = "Current Sums";
+                        cell.classList.add('current-corner-cell');
+                    }
+                    // Target Column sum cells (top row)
+                    else if (i === 0 && j > 0 && j < 6) {
                         cell.textContent = state.colSums[j-1];
                         cell.classList.add('sum-cell');
                     }
-                    // Row sum cells (left column)
-                    else if (j === 0) {
+                    // Target Row sum cells (left column)
+                    else if (j === 0 && i > 0 && i < 6) {
                         cell.textContent = state.rowSums[i-1];
                         cell.classList.add('sum-cell');
                     }
+                    // Current Column sum cells (bottom row)
+                    else if (i === 6 && j > 0 && j < 6) {
+                        const colSum = state.currentColSums[j-1];
+                        cell.textContent = colSum;
+                        cell.classList.add('current-sum-cell');
+                        
+                        // Add mismatch class if current sum doesn't match target
+                        if (colSum !== state.colSums[j-1] && state.filledPositions > 0) {
+                            cell.classList.add('mismatch-sum');
+                        }
+                    }
+                    // Current Row sum cells (right column)
+                    else if (j === 6 && i > 0 && i < 6) {
+                        const rowSum = state.currentRowSums[i-1];
+                        cell.textContent = rowSum;
+                        cell.classList.add('current-sum-cell');
+                        
+                        // Add mismatch class if current sum doesn't match target
+                        if (rowSum !== state.rowSums[i-1] && state.filledPositions > 0) {
+                            cell.classList.add('mismatch-sum');
+                        }
+                    }
+                    // Empty cell for top-right/right-top corner
+                    else if ((i === 0 && j === 6) || (i === 6 && j === 0)) {
+                        cell.classList.add('corner-cell');
+                    }
                     // Regular grid cells
-                    else {
+                    else if (i > 0 && i < 6 && j > 0 && j < 6) {
                         const gridRow = i - 1;
                         const gridCol = j - 1;
                         
@@ -664,11 +762,17 @@
                         state.selectedCell.classList.remove('highlighted');
                         state.selectedCell = null;
                         
+                        // Recalculate current sums
+                        calculateCurrentSums();
+                        
                         // Track filled positions
                         state.filledPositions = countFilledPositions();
                         
                         // Update number button states
                         updateNumberButtonStates();
+                        
+                        // Update grid display for new sums
+                        updateGridDisplay();
                         
                         // Check for win
                         if (state.filledPositions === state.locsToBlankX.length) {
@@ -714,11 +818,17 @@
                             cell.classList.add('empty-cell');
                             state.grid[row][col] = ' ';
                             
+                            // Recalculate current sums
+                            calculateCurrentSums();
+                            
                             // Update filled positions count
                             state.filledPositions = countFilledPositions();
                             
                             // Re-enable the button for this digit
                             updateNumberButtonStates();
+                            
+                            // Update grid display for new sums
+                            updateGridDisplay();
                             
                             // Remove highlighting if this cell was selected
                             if (state.selectedCell === cell) {
@@ -796,35 +906,9 @@
 
         // Check win condition
         function checkWinCondition() {
-            // Calculate current row and column sums
-            const currentRowSums = [];
-            const currentColSums = [];
-            
-            // Row sums
-            for (let row = 0; row < 5; row++) {
-                let sum = 0;
-                for (let col = 0; col < 5; col++) {
-                    if (state.grid[row][col] !== ' ') {
-                        sum += Number(state.grid[row][col]);
-                    }
-                }
-                currentRowSums.push(sum);
-            }
-            
-            // Column sums
-            for (let col = 0; col < 5; col++) {
-                let sum = 0;
-                for (let row = 0; row < 5; row++) {
-                    if (state.grid[row][col] !== ' ') {
-                        sum += Number(state.grid[row][col]);
-                    }
-                }
-                currentColSums.push(sum);
-            }
-            
             // Check if all sums match
-            const rowSumsMatch = currentRowSums.every((sum, i) => sum === state.rowSums[i]);
-            const colSumsMatch = currentColSums.every((sum, i) => sum === state.colSums[i]);
+            const rowSumsMatch = state.currentRowSums.every((sum, i) => sum === state.rowSums[i]);
+            const colSumsMatch = state.currentColSums.every((sum, i) => sum === state.colSums[i]);
             
             if (rowSumsMatch && colSumsMatch) {
                 // Highlight all player-placed digits as correct
@@ -875,6 +959,9 @@
                 state.grid[row][col] = ' ';
             }
             
+            // Recalculate current sums
+            calculateCurrentSums();
+            
             // Update display
             updateGridDisplay();
             
@@ -901,6 +988,9 @@
                 const digit = state.originalGrid[row][col];
                 state.grid[row][col] = digit;
             }
+            
+            // Recalculate current sums
+            calculateCurrentSums();
             
             // Update display
             updateGridDisplay();
@@ -950,6 +1040,9 @@
             
             // Fill in the correct digit
             state.grid[row][col] = correctDigit;
+            
+            // Recalculate current sums
+            calculateCurrentSums();
             
             // Update display
             updateGridDisplay();
@@ -1052,3 +1145,5 @@
         // Start the game
         document.addEventListener('DOMContentLoaded', initializeGame);
     </script>
+</body>
+</html>
