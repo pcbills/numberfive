@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numberfive</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --color-correct: #6aaa64;
+            --color-present: #c9b458;
+            --color-absent: #787c7e;
+            --color-background: #ffffff;
+            --color-border: #d3d6da;
+            --font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+            --sum-background: #f0f0f0;
+            --sum-text: #333333;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-background);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        /* Header styles */
+        .game-header {
+            text-align: center;
+            padding: 5px 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .game-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            color: #1a1a1b;
+        }
+
+        #help-button {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.5rem;
+            border-radius: 9999px;
+            background: white;
+            border: none;
+            cursor: pointer;
+            z-index: 50;
+            transition: background-color 0.2s;
+        }
+
+        #help-button:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Game container */
+        .game-container {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Board styles */
+        .board-wrapper {
+            width: 100%;
+            padding: 5px;
+            overflow-x: auto;
+        }
+
+        #game-board {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 3px;
+            margin: 0 auto;
+            table-layout: fixed;
+        }
+
+        #game-board td {
+            width: calc(100% / 7);
+            height: 50px;
+            border: 2px solid var(--color-border);
+            background-color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* Sum cells styling */
+        #game-board td.sum-cell {
+            background-color: var(--sum-background);
+            color: var(--sum-text);
+            font-size: 1.2rem;
+        }
+
+        /* Empty cell for top-left corner */
+        #game-board td.corner-cell {
+            background-color: #e5e5e5;
+            border: none;
+        }
+
+        /* Number buttons */
+        .number-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 350px;
+            margin: 10px auto;
+        }
+
+        .number-button {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--color-absent);
+            color: white;
+            font-family: var(--font-family);
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Disabled button styles */
+        .number-button:disabled {
+            background-color: #d3d6da;
+            opacity: 0.6;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .number-button:disabled::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 2px;
+            background-color: #787c7e;
+        }
+
+        /* Style for highlighted/selected cells */
+        .empty-cell.highlighted {
+            background-color: #f0f0f0;
+            border: 2px solid #6aaa64 !important;
+            box-shadow: 0 0 5px rgba(106, 170, 100, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        /* Add hover effect for empty cells */
+        .empty-cell:hover {
+            background-color: #f8f8f8;
+            cursor: pointer;
+        }
+
+        /* Control buttons */
+        .control-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--color-correct);
+            color: white;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        /* Show answer button style */
+        #show-answer-button {
+            background-color: #808080;
+        }
+
+        #show-answer-button:hover {
+            background-color: #666666;
+        }
+
+        /* Player placed numbers */
+        .player-placed {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #0000FF;
+        }
+
+        .player-placed.correct {
+            color: #4CAF50 !important;
+            font-weight: bold;
+        }
+
+        /* Win message */
+        #win-message {
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2);
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-correct);
+            z-index: 1000;
+        }
+
+        /* Help modal */
+        #help-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            display: none;
+        }
+
+        #help-modal.hidden {
+            display: none;
+        }
+
+        #help-modal:not(.hidden) {
+            display: block;
+        }
+
+        .bg-white {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            max-width: 28rem;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: auto;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+
+        .list-disc {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+        }
+
+        .list-decimal {
+            list-style-type: decimal;
+            padding-left: 1.25rem;
+        }
+
+        /* Share button and Try Wordfive button */
+        .share-button-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .share-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2196F3;
+            color: white;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.2s ease;
+        }
+
+        .share-button:hover {
+            background-color: #1976D2;
+        }
+        
+        .try-wordfive-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #9C27B0; /* Purple */
+            color: white;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.2s ease;
+        }
+        
+        .try-wordfive-button:hover {
+            background-color: #7B1FA2; /* Darker purple */
+        }
+        
+        /* Hint button style */
+        #hint-button {
+            background-color: #FF9800; /* Orange */
+        }
+        
+        #hint-button:hover {
+            background-color: #F57C00; /* Darker orange */
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 65%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Responsive design */
+        @media (max-width: 500px) {
+            .game-container {
+                padding: 5px;
+            }
+
+            #game-board td {
+                font-size: 1.25rem;
+                height: 40px;
+            }
+
+            .number-button {
+                font-size: 1.25rem;
+            }
+
+            .control-button, .share-button, .try-wordfive-button {
+                padding: 8px 12px;
+                font-size: 0.7rem;
+            }
+            
+            .game-header {
+                width: 90vw;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+
+            #help-button {
+                right: 0.5rem;
+            }
+            
+            .share-button-container {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <h1 class="game-title">Numberfive</h1>
+        <button id="help-button">?</button>
+    </div>
+
+    <div class="game-container">
+        <div class="board-wrapper">
+            <table id="game-board"></table>
+        </div>
+
+        <div class="number-buttons" id="number-buttons">
+            <!-- Will be filled by JavaScript -->
+        </div>
+
+        <div class="control-buttons">
+            <button id="reset-button" class="control-button">Reset</button>
+            <button id="new-puzzle-button" class="control-button">New Puzzle</button>
+            <button id="hint-button" class="control-button">Hint</button>
+            <button id="show-answer-button" class="control-button">Show Answer</button>
+        </div>
+
+        <div class="share-button-container">
+            <button id="share-button" class="share-button">Share</button>
+            <button id="try-wordfive-button" class="try-wordfive-button">Try Wordfive!</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="hidden">
+        <div class="bg-white">
+            <h2 class="text-xl font-bold mb-4">How to Play Numberfive</h2>
+            <div class="space-y-4">
+                <p>
+                    Numberfive is a numerical puzzle game where you place missing numbers into a grid.
+                </p>
+                <br>
+                <p>
+                    Each row and column has a sum displayed, and you need to fill in the missing numbers so that each row and column sums to the displayed total.
+                </p>
+
+                <div>
+                    <h3 class="font-bold mb-2">Game Rules:</h3>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>The grid contains numbers from 0-9</li>
+                        <li>The top row shows the sum of each column</li>
+                        <li>The leftmost column shows the sum of each row</li>
+                        <li>Five digits have been removed from the grid</li>
+                        <li>Your goal is to place the missing digits back into the grid so the sums match</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-bold mb-2">How to Play:</h3>
+                    <ol class="list-decimal pl-5 space-y-2">
+                        <li>Click on any empty space in the grid</li>
+                        <li>Click a number button to place that digit in the selected space</li>
+                        <li>Continue until you've placed all five digits</li>
+                        <li>If all row and column sums match, you win!</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <h3 class="font-bold mb-2">Controls:</h3>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>Reset:</strong> Clear your placed numbers to try again</li>
+                        <li><strong>New Puzzle:</strong> Start a completely new puzzle</li>
+                        <li><strong>Show Answer:</strong> Show the correct answer to the puzzle</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Core game state
+        const state = {
+            grid: [],
+            originalGrid: [],
+            locsToBlankX: [],
+            locsToBlankY: [],
+            removedDigits: [],
+            selectedCell: null,
+            rowSums: [],
+            colSums: [],
+            filledPositions: 0
+        };
+
+        // DOM Elements
+        const elements = {
+            gridboard: document.getElementById('game-board'),
+            numberButtons: document.getElementById('number-buttons'),
+            newPuzzleButton: document.getElementById('new-puzzle-button'),
+            resetButton: document.getElementById('reset-button'),
+            showAnswerButton: document.getElementById('show-answer-button'),
+            hintButton: document.getElementById('hint-button'),
+            shareButton: document.getElementById('share-button'),
+            tryWordfiveButton: document.getElementById('try-wordfive-button'),
+            helpButton: document.getElementById('help-button'),
+            helpModal: document.getElementById('help-modal')
+        };
+
+        // Create a new 5x5 grid with random numbers
+        function createGrid() {
+            // Reset state
+            state.grid = [];
+            state.originalGrid = [];
+            state.rowSums = [];
+            state.colSums = [];
+            state.locsToBlankX = [];
+            state.locsToBlankY = [];
+            state.removedDigits = [];
+            state.filledPositions = 0;
+            
+            // Create a 5x5 grid with random numbers 0-9
+            for (let i = 0; i < 5; i++) {
+                const row = [];
+                for (let j = 0; j < 5; j++) {
+                    const randomDigit = Math.floor(Math.random() * 10); // 0-9
+                    row.push(randomDigit);
+                }
+                state.grid.push(row);
+            }
+            
+            // Calculate row and column sums
+            calculateSums();
+            
+            // Store original grid before removing digits
+            state.originalGrid = state.grid.map(row => [...row]);
+            
+            // Remove 5 random digits
+            removeRandomDigits();
+            
+            // Update the display
+            updateGridDisplay();
+            
+            // Set up number buttons
+            setupNumberButtons();
+        }
+
+        // Calculate sums for rows and columns
+        function calculateSums() {
+            // Calculate row sums
+            state.rowSums = state.grid.map(row => 
+                row.reduce((sum, num) => sum + num, 0)
+            );
+            
+            // Calculate column sums
+            state.colSums = [];
+            for (let col = 0; col < 5; col++) {
+                let sum = 0;
+                for (let row = 0; row < 5; row++) {
+                    sum += state.grid[row][col];
+                }
+                state.colSums.push(sum);
+            }
+        }
+
+        // Remove 5 random unique digits (0-9) from the grid
+        function removeRandomDigits() {
+            // Create an array of digits 0-9
+            const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            
+            // Shuffle and select 5 digits to remove
+            const shuffledDigits = digits.sort(() => 0.5 - Math.random());
+            const digitsToRemove = shuffledDigits.slice(0, 5);
+            
+            for (const digit of digitsToRemove) {
+                // Find all positions of this digit in the grid
+                const positions = [];
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        if (state.grid[row][col] === digit) {
+                            positions.push({row, col});
+                        }
+                    }
+                }
+                
+                // If digit exists in grid, remove all instances
+                if (positions.length > 0) {
+                    for (const pos of positions) {
+                        state.grid[pos.row][pos.col] = ' ';
+                        state.locsToBlankX.push(pos.row);
+                        state.locsToBlankY.push(pos.col);
+                    }
+                    state.removedDigits.push(digit);
+                }
+            }
+            
+            // If we didn't get 5 digits, try again with remaining digits
+            if (state.removedDigits.length < 5) {
+                const remainingDigits = digits.filter(d => !state.removedDigits.includes(d));
+                const additionalToRemove = remainingDigits.slice(0, 5 - state.removedDigits.length);
+                
+                for (const digit of additionalToRemove) {
+                    // Add the digit to removedDigits even if it doesn't exist in the grid
+                    state.removedDigits.push(digit);
+                }
+            }
+        }
+
+        // Update the grid display
+        function updateGridDisplay() {
+            elements.gridboard.innerHTML = '';
+            
+            // Create table with 6x6 dimensions (5x5 grid + row/col sums)
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement('tr');
+                
+                for (let j = 0; j < 6; j++) {
+                    const cell = document.createElement('td');
+                    
+                    // Top left corner cell
+                    if (i === 0 && j === 0) {
+                        cell.classList.add('corner-cell');
+                    }
+                    // Column sum cells (top row)
+                    else if (i === 0) {
+                        cell.textContent = state.colSums[j-1];
+                        cell.classList.add('sum-cell');
+                    }
+                    // Row sum cells (left column)
+                    else if (j === 0) {
+                        cell.textContent = state.rowSums[i-1];
+                        cell.classList.add('sum-cell');
+                    }
+                    // Regular grid cells
+                    else {
+                        const gridRow = i - 1;
+                        const gridCol = j - 1;
+                        
+                        cell.dataset.row = gridRow;
+                        cell.dataset.col = gridCol;
+                        cell.textContent = state.grid[gridRow][gridCol];
+                        
+                        // Check if this is an empty cell
+                        if (cell.textContent === ' ') {
+                            cell.classList.add('empty-cell');
+                        }
+                        
+                        // Check if this is a player-placed digit
+                        const isBlankPos = state.locsToBlankX.some((row, idx) => 
+                            row === gridRow && state.locsToBlankY[idx] === gridCol
+                        );
+                        
+                        if (isBlankPos && cell.textContent !== ' ') {
+                            cell.classList.add('player-placed');
+                        }
+                    }
+                    
+                    row.appendChild(cell);
+                }
+                
+                elements.gridboard.appendChild(row);
+            }
+        }
+
+        // Set up number buttons based on removed digits
+        function setupNumberButtons() {
+            // Clear existing buttons
+            elements.numberButtons.innerHTML = '';
+            
+            // Create buttons for each removed digit
+            state.removedDigits.forEach(digit => {
+                const button = document.createElement('button');
+                button.className = 'number-button';
+                button.textContent = digit;
+                button.id = `num-${digit}`;
+                elements.numberButtons.appendChild(button);
+                
+                // Add click handler
+                button.addEventListener('click', () => {
+                    if (state.selectedCell) {
+                        const rowIndex = parseInt(state.selectedCell.dataset.row);
+                        const colIndex = parseInt(state.selectedCell.dataset.col);
+                        
+                        // Update cell with new digit
+                        state.selectedCell.textContent = digit;
+                        state.selectedCell.classList.remove('empty-cell');
+                        state.selectedCell.classList.add('player-placed');
+                        state.grid[rowIndex][colIndex] = digit;
+                        
+                        // Remove highlighting
+                        state.selectedCell.classList.remove('highlighted');
+                        state.selectedCell = null;
+                        
+                        // Track filled positions
+                        state.filledPositions = countFilledPositions();
+                        
+                        // Update number button states
+                        updateNumberButtonStates();
+                        
+                        // Check for win
+                        if (state.filledPositions === state.locsToBlankX.length) {
+                            checkWinCondition();
+                        }
+                    }
+                });
+            });
+            
+            // Initial button state update
+            updateNumberButtonStates();
+        }
+
+        // Add click handlers for grid cells
+        function setupCellListeners() {
+            // Handle clicks outside cells to remove highlighting
+            document.addEventListener('click', (e) => {
+                if (!e.target.matches('td')) {
+                    if (state.selectedCell) {
+                        state.selectedCell.classList.remove('highlighted');
+                        state.selectedCell = null;
+                    }
+                }
+            });
+            
+            // Handle cell clicks
+            elements.gridboard.addEventListener('click', (e) => {
+                const cell = e.target;
+                if (cell.tagName === 'TD' && cell.hasAttribute('data-row')) {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    const isEmptyPosition = state.locsToBlankX.some((x, i) => 
+                        x === row && state.locsToBlankY[i] === col
+                    );
+                    
+                    if (isEmptyPosition) {
+                        // Check if this is a player-placed number that can be removed
+                        if (cell.classList.contains('player-placed') && cell.textContent !== ' ') {
+                            // Remove the placed number
+                            const digit = Number(cell.textContent);
+                            cell.textContent = ' ';
+                            cell.classList.remove('player-placed');
+                            cell.classList.add('empty-cell');
+                            state.grid[row][col] = ' ';
+                            
+                            // Update filled positions count
+                            state.filledPositions = countFilledPositions();
+                            
+                            // Re-enable the button for this digit
+                            updateNumberButtonStates();
+                            
+                            // Remove highlighting if this cell was selected
+                            if (state.selectedCell === cell) {
+                                cell.classList.remove('highlighted');
+                                state.selectedCell = null;
+                            }
+                        } else {
+                            // Regular cell selection behavior
+                            // Remove highlighting from previous cell
+                            if (state.selectedCell) {
+                                state.selectedCell.classList.remove('highlighted');
+                            }
+                            
+                            // Add highlighting to new cell
+                            cell.classList.add('highlighted');
+                            state.selectedCell = cell;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Count filled positions
+        function countFilledPositions() {
+            let count = 0;
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                if (state.grid[row][col] !== ' ') {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // Update number button states based on usage
+        function updateNumberButtonStates() {
+            // Count how many of each digit are already placed
+            const placedDigits = {};
+            state.removedDigits.forEach(digit => {
+                placedDigits[digit] = 0;
+            });
+            
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                const digit = state.grid[row][col];
+                if (digit !== ' ' && state.removedDigits.includes(Number(digit))) {
+                    placedDigits[digit]++;
+                }
+            }
+            
+            // Determine how many of each digit should be placed
+            const totalDigitCount = {};
+            state.removedDigits.forEach(digit => {
+                let count = 0;
+                for (let i = 0; i < state.locsToBlankX.length; i++) {
+                    const row = state.locsToBlankX[i];
+                    const col = state.locsToBlankY[i];
+                    if (state.originalGrid[row][col] === digit) {
+                        count++;
+                    }
+                }
+                totalDigitCount[digit] = count;
+            });
+            
+            // Update button states
+            state.removedDigits.forEach(digit => {
+                const button = document.getElementById(`num-${digit}`);
+                if (button) {
+                    button.disabled = placedDigits[digit] >= totalDigitCount[digit];
+                }
+            });
+        }
+
+        // Check win condition
+        function checkWinCondition() {
+            // Calculate current row and column sums
+            const currentRowSums = [];
+            const currentColSums = [];
+            
+            // Row sums
+            for (let row = 0; row < 5; row++) {
+                let sum = 0;
+                for (let col = 0; col < 5; col++) {
+                    if (state.grid[row][col] !== ' ') {
+                        sum += Number(state.grid[row][col]);
+                    }
+                }
+                currentRowSums.push(sum);
+            }
+            
+            // Column sums
+            for (let col = 0; col < 5; col++) {
+                let sum = 0;
+                for (let row = 0; row < 5; row++) {
+                    if (state.grid[row][col] !== ' ') {
+                        sum += Number(state.grid[row][col]);
+                    }
+                }
+                currentColSums.push(sum);
+            }
+            
+            // Check if all sums match
+            const rowSumsMatch = currentRowSums.every((sum, i) => sum === state.rowSums[i]);
+            const colSumsMatch = currentColSums.every((sum, i) => sum === state.colSums[i]);
+            
+            if (rowSumsMatch && colSumsMatch) {
+                // Highlight all player-placed digits as correct
+                highlightCorrectDigits();
+                // Show win message
+                showWinMessage();
+            }
+        }
+
+        // Highlight correct digits
+        function highlightCorrectDigits() {
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                const cell = elements.gridboard.rows[row + 1].cells[col + 1];
+                
+                cell.classList.add('correct');
+            }
+        }
+
+        // Show win message
+        function showWinMessage() {
+            // Create win message if it doesn't exist
+            if (!document.getElementById('win-message')) {
+                const messageDiv = document.createElement('div');
+                messageDiv.id = 'win-message';
+                messageDiv.textContent = ['Great job!', 'You win!', 'That\'s Numberfive!'][Math.floor(Math.random() * 3)];
+                document.body.appendChild(messageDiv);
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
+            }
+        }
+
+        // Reset puzzle
+        function resetPuzzle() {
+            if (state.selectedCell) {
+                state.selectedCell.classList.remove('highlighted');
+                state.selectedCell = null;
+            }
+            
+            // Reset grid to have blanks
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                state.grid[row][col] = ' ';
+            }
+            
+            // Update display
+            updateGridDisplay();
+            
+            // Reset counters and button states
+            state.filledPositions = 0;
+            updateNumberButtonStates();
+            
+            // Remove win message if present
+            const winMessage = document.getElementById('win-message');
+            if (winMessage) {
+                winMessage.remove();
+            }
+        }
+
+        // Show the answer
+        function showAnswer() {
+            // Reset first
+            resetPuzzle();
+            
+            // Place original digits in their correct positions
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                const digit = state.originalGrid[row][col];
+                state.grid[row][col] = digit;
+            }
+            
+            // Update display
+            updateGridDisplay();
+            
+            // Disable number buttons
+            state.removedDigits.forEach(digit => {
+                const button = document.getElementById(`num-${digit}`);
+                if (button) {
+                    button.disabled = true;
+                }
+            });
+            
+            // Apply "shown answer" style to cells
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                const cell = elements.gridboard.rows[row + 1].cells[col + 1];
+                cell.classList.add('player-placed');
+                cell.style.color = '#808080'; // Grey color to indicate it's a revealed answer
+            }
+        }
+        
+        // Give a hint by filling in one correct cell
+        function giveHint() {
+            // Find all empty positions
+            const emptyPositions = [];
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                if (state.grid[row][col] === ' ') {
+                    emptyPositions.push({ row, col, index: i });
+                }
+            }
+            
+            // If there are no empty positions, do nothing
+            if (emptyPositions.length === 0) {
+                showToast('No empty positions left!');
+                return;
+            }
+            
+            // Choose a random empty position
+            const randomPosition = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
+            const { row, col } = randomPosition;
+            
+            // Get the correct digit for this position
+            const correctDigit = state.originalGrid[row][col];
+            
+            // Fill in the correct digit
+            state.grid[row][col] = correctDigit;
+            
+            // Update display
+            updateGridDisplay();
+            
+            // Apply hint styling
+            const cell = elements.gridboard.rows[row + 1].cells[col + 1];
+            cell.classList.add('player-placed');
+            cell.style.color = '#FF9800'; // Orange color for hints
+            
+            // Update filled positions count
+            state.filledPositions = countFilledPositions();
+            
+            // Update number button states
+            updateNumberButtonStates();
+            
+            // Check for win
+            if (state.filledPositions === state.locsToBlankX.length) {
+                checkWinCondition();
+            }
+        }
+
+        // Share functionality
+        function shareGame() {
+            const shareText = "Numbers and sums! Try Numberfive, a spinoff of Wordfive!\n\nhttps://playnumberfive.com";
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareText)
+                .then(() => showToast('Copied to clipboard!'))
+                .catch(err => showToast('Failed to copy'));
+        }
+
+        // Show toast message
+        function showToast(message) {
+            // Remove existing toast if present
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Trigger reflow
+            toast.offsetHeight;
+            
+            // Show toast
+            toast.classList.add('show');
+            
+            // Hide after 2 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        // Setup help modal
+        function setupHelpModal() {
+            elements.helpButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                elements.helpModal.classList.remove('hidden');
+            });
+            
+            // Click outside to close
+            elements.helpModal.addEventListener('click', (e) => {
+                if (e.target === elements.helpModal) {
+                    elements.helpModal.classList.add('hidden');
+                }
+            });
+            
+            // Make sure clicks on modal content don't close it
+            const modalContent = elements.helpModal.querySelector('.bg-white');
+            modalContent.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // Initialize game
+        function initializeGame() {
+            // Create grid and set up game state
+            createGrid();
+            
+            // Set up event listeners
+            setupCellListeners();
+            setupHelpModal();
+            
+            // Button event listeners
+            elements.resetButton.addEventListener('click', resetPuzzle);
+            elements.newPuzzleButton.addEventListener('click', createGrid);
+            elements.showAnswerButton.addEventListener('click', showAnswer);
+            elements.hintButton.addEventListener('click', giveHint);
+            elements.shareButton.addEventListener('click', shareGame);
+            elements.tryWordfiveButton.addEventListener('click', () => {
+                window.open('https://playwordfive.com', '_blank');
+            });
+        }
+
+        // Start the game
+        document.addEventListener('DOMContentLoaded', initializeGame);
+    </script>
