@@ -247,21 +247,76 @@
             color: #4CAF50 !important;
             font-weight: bold;
         }
+        
+        /* Enhanced styles for different states */
+        .correct-cell {
+            background-color: #e6ffe6 !important; /* Light green that keeps numbers visible */
+            color: #000 !important; /* Ensure text is readable */
+            font-weight: bold;
+        }
 
         /* Win message */
         #win-message {
             position: fixed;
-            top: 25%;
+            top: 35%;
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
+            padding: 20px 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2);
-            font-size: 24px;
+            box-shadow: 0 4px 23px 0 rgba(0, 0, 0, 0.2), 0 0 20px rgba(106, 170, 100, 0.6);
+            font-size: 32px;
             font-weight: bold;
             color: var(--color-correct);
             z-index: 1000;
+            text-align: center;
+            animation: celebrate 0.6s ease-in-out;
+        }
+        
+        @keyframes celebrate {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        /* Confetti container */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+        
+        /* Confetti pieces */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.8;
+        }
+        
+        /* Trophy icon */
+        .trophy {
+            display: block;
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: gold;
+        }
+        
+        /* Firework animation */
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            animation: explode 1s ease-out forwards;
         }
 
         /* Help modal */
@@ -911,38 +966,342 @@
             const colSumsMatch = state.currentColSums.every((sum, i) => sum === state.colSums[i]);
             
             if (rowSumsMatch && colSumsMatch) {
-                // Highlight all player-placed digits as correct
+                // First highlight all player-placed digits as correct
                 highlightCorrectDigits();
-                // Show win message
-                showWinMessage();
+                
+                // Add a slight delay before celebration to allow highlighting to be visible
+                setTimeout(() => {
+                    // Then show celebratory win message with effects
+                    showWinMessage();
+                }, 300);
             }
         }
 
-        // Highlight correct digits
+        // Highlight correct digits with animation
         function highlightCorrectDigits() {
             for (let i = 0; i < state.locsToBlankX.length; i++) {
                 const row = state.locsToBlankX[i];
                 const col = state.locsToBlankY[i];
                 const cell = elements.gridboard.rows[row + 1].cells[col + 1];
                 
+                // Add correct class
                 cell.classList.add('correct');
+                
+                // Add highlight animation with staggered timing
+                setTimeout(() => {
+                    cell.style.transition = 'all 0.3s ease-in-out';
+                    cell.style.backgroundColor = '#6aaa64';
+                    cell.style.color = 'white';
+                    cell.style.transform = 'scale(1.15)';
+                    cell.style.boxShadow = '0 0 10px rgba(106, 170, 100, 0.8)';
+                    
+                    // Reset transform after animation
+                    setTimeout(() => {
+                        cell.style.transform = 'scale(1)';
+                    }, 400);
+                }, i * 100); // Stagger the animations
+                
+                // Ensure the cell returns to a readable state after celebration
+                setTimeout(() => {
+                    cell.style.backgroundColor = '#e6ffe6'; // Light green background
+                    cell.style.color = '#000'; // Black text for readability
+                    cell.style.boxShadow = 'none';
+                    cell.style.fontWeight = 'bold';
+                }, 5500);
+            }
+            
+            // Also highlight the matching sum cells
+            highlightMatchingSums();
+        }
+        
+        // Highlight matching sum cells
+        function highlightMatchingSums() {
+            // Highlight row sum cells
+            for (let i = 0; i < 5; i++) {
+                const targetSumCell = elements.gridboard.rows[i+1].cells[0];
+                const currentSumCell = elements.gridboard.rows[i+1].cells[6];
+                
+                setTimeout(() => {
+                    targetSumCell.style.transition = 'all 0.3s ease-in-out';
+                    targetSumCell.style.backgroundColor = '#8db580';
+                    targetSumCell.style.color = 'white';
+                    targetSumCell.style.fontWeight = 'bold';
+                    
+                    currentSumCell.style.transition = 'all 0.3s ease-in-out';
+                    currentSumCell.style.backgroundColor = '#8db580';
+                    currentSumCell.style.color = 'white';
+                    currentSumCell.style.fontWeight = 'bold';
+                }, i * 100);
+                
+                // Return to readable state after celebration
+                setTimeout(() => {
+                    targetSumCell.style.backgroundColor = '#f0f0f0';
+                    targetSumCell.style.color = '#333333';
+                    
+                    currentSumCell.style.backgroundColor = '#e6f7ff';
+                    currentSumCell.style.color = '#0066cc';
+                }, 5500);
+            }
+            
+            // Highlight column sum cells
+            for (let i = 0; i < 5; i++) {
+                const targetSumCell = elements.gridboard.rows[0].cells[i+1];
+                const currentSumCell = elements.gridboard.rows[6].cells[i+1];
+                
+                setTimeout(() => {
+                    targetSumCell.style.transition = 'all 0.3s ease-in-out';
+                    targetSumCell.style.backgroundColor = '#8db580';
+                    targetSumCell.style.color = 'white';
+                    targetSumCell.style.fontWeight = 'bold';
+                    
+                    currentSumCell.style.transition = 'all 0.3s ease-in-out';
+                    currentSumCell.style.backgroundColor = '#8db580';
+                    currentSumCell.style.color = 'white';
+                    currentSumCell.style.fontWeight = 'bold';
+                }, (i + 5) * 100);
+                
+                // Return to readable state after celebration
+                setTimeout(() => {
+                    targetSumCell.style.backgroundColor = '#f0f0f0';
+                    targetSumCell.style.color = '#333333';
+                    
+                    currentSumCell.style.backgroundColor = '#e6f7ff';
+                    currentSumCell.style.color = '#0066cc';
+                }, 5500);
             }
         }
 
-        // Show win message
+        // Show win message with celebration effects
         function showWinMessage() {
             // Create win message if it doesn't exist
             if (!document.getElementById('win-message')) {
+                // Play victory sound
+                playVictorySound();
+                
+                // Create confetti container
+                const confettiContainer = document.createElement('div');
+                confettiContainer.className = 'confetti-container';
+                document.body.appendChild(confettiContainer);
+                
+                // Create win message
                 const messageDiv = document.createElement('div');
                 messageDiv.id = 'win-message';
-                messageDiv.textContent = ['Great job!', 'You win!', 'That\'s Numberfive!'][Math.floor(Math.random() * 3)];
+                
+                // Add trophy icon
+                const trophy = document.createElement('span');
+                trophy.className = 'trophy';
+                trophy.textContent = '🏆';
+                messageDiv.appendChild(trophy);
+                
+                // Add congratulatory text
+                const text = document.createElement('div');
+                text.textContent = ['Amazing!', 'Brilliant!', 'That\'s Numberfive!'][Math.floor(Math.random() * 3)];
+                messageDiv.appendChild(text);
+                
                 document.body.appendChild(messageDiv);
                 
-                // Remove message after 3 seconds
+                // Create confetti
+                createConfetti(confettiContainer, 150);
+                
+                // Create fireworks
+                createFireworks(10);
+                
+                // Make grid cells pulse
+                pulseGridCells();
+                
+                // Remove celebration effects after delay, but keep the grid visible
                 setTimeout(() => {
                     messageDiv.remove();
-                }, 3000);
+                    confettiContainer.remove();
+                    const fireworks = document.querySelectorAll('.firework');
+                    fireworks.forEach(fw => fw.remove());
+                    
+                    // Clear any animations but keep the color scheme
+                    const cells = document.querySelectorAll('.player-placed');
+                    cells.forEach(cell => {
+                        cell.style.animation = '';
+                    });
+                }, 5000);
             }
+        }
+        
+        // Create confetti pieces
+        function createConfetti(container, count) {
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#073B4C', '#8338EC'];
+            
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // Random position, color, and animation
+                const left = Math.random() * 100;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 5 + 5;
+                const animationDuration = Math.random() * 3 + 2;
+                const rotation = Math.random() * 360;
+                
+                confetti.style.cssText = `
+                    left: ${left}vw;
+                    top: -5vh;
+                    width: ${size}px;
+                    height: ${size}px;
+                    background-color: ${color};
+                    transform: rotate(${rotation}deg);
+                    animation: fall ${animationDuration}s linear forwards;
+                `;
+                
+                // Random shape
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                } else if (Math.random() > 0.5) {
+                    confetti.style.width = `${size/2}px`;
+                    confetti.style.height = `${size}px`;
+                }
+                
+                container.appendChild(confetti);
+            }
+            
+            // Add fall animation
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = `
+                @keyframes fall {
+                    0% { transform: translateY(0) rotate(0); opacity: 1; }
+                    25% { transform: translateY(25vh) rotate(90deg) translateX(${Math.random() * 10 - 5}vw); }
+                    50% { transform: translateY(50vh) rotate(180deg) translateX(${Math.random() * 10 - 5}vw); }
+                    75% { transform: translateY(75vh) rotate(270deg) translateX(${Math.random() * 10 - 5}vw); }
+                    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styleSheet);
+        }
+        
+        // Create firework animation
+        function createFireworks(count) {
+            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    
+                    // Random position
+                    const left = Math.random() * 80 + 10;
+                    const top = Math.random() * 60 + 10;
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    firework.style.cssText = `
+                        left: ${left}vw;
+                        top: ${top}vh;
+                        background-color: ${color};
+                    `;
+                    
+                    document.body.appendChild(firework);
+                    
+                    // Remove after animation completes
+                    setTimeout(() => {
+                        firework.remove();
+                    }, 1000);
+                }, Math.random() * 2000);
+            }
+            
+            // Add explode animation
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = `
+                @keyframes explode {
+                    0% { transform: scale(0); opacity: 1; }
+                    50% { transform: scale(20); opacity: 1; }
+                    100% { transform: scale(40); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styleSheet);
+        }
+        
+        // Make grid cells pulse
+        function pulseGridCells() {
+            // Add pulse animation to cells
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = `
+                @keyframes pulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.1); box-shadow: 0 0 15px rgba(106, 170, 100, 0.7); }
+                    100% { transform: scale(1); }
+                }
+            `;
+            document.head.appendChild(styleSheet);
+            
+            // Apply animation to filled cells with slight delay between them
+            const cells = document.querySelectorAll('.player-placed');
+            cells.forEach((cell, index) => {
+                setTimeout(() => {
+                    cell.style.animation = 'pulse 0.5s ease-in-out';
+                    cell.style.animationIterationCount = '3';
+                    
+                    // Remove animation after it completes
+                    setTimeout(() => {
+                        cell.style.animation = '';
+                    }, 1500);
+                }, index * 100);
+            });
+        }
+        
+        // Play victory sound
+        function playVictorySound() {
+            try {
+                // Create audio element with victory sound
+                const audio = new Audio();
+                audio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+                audio.volume = 0.5;
+                audio.play();
+            } catch (e) {
+                console.error("Couldn't play victory sound:", e);
+            }
+        }
+
+        // Reset puzzle
+        function resetPuzzle() {
+            if (state.selectedCell) {
+                state.selectedCell.classList.remove('highlighted');
+                state.selectedCell = null;
+            }
+            
+            // Reset grid to have blanks
+            for (let i = 0; i < state.locsToBlankX.length; i++) {
+                const row = state.locsToBlankX[i];
+                const col = state.locsToBlankY[i];
+                state.grid[row][col] = ' ';
+            }
+            
+            // Remove any celebration elements
+            const confettiContainer = document.querySelector('.confetti-container');
+            if (confettiContainer) confettiContainer.remove();
+            
+            const fireworks = document.querySelectorAll('.firework');
+            fireworks.forEach(fw => fw.remove());
+            
+            const winMessage = document.getElementById('win-message');
+            if (winMessage) winMessage.remove();
+            
+            // Reset all cell styles
+            const allCells = elements.gridboard.querySelectorAll('td');
+            allCells.forEach(cell => {
+                cell.style.backgroundColor = '';
+                cell.style.color = '';
+                cell.style.fontWeight = '';
+                cell.style.boxShadow = '';
+                cell.style.transform = '';
+                cell.style.transition = '';
+                cell.style.animation = '';
+            });
+            
+            // Recalculate current sums
+            calculateCurrentSums();
+            
+            // Update display
+            updateGridDisplay();
+            
+            // Reset counters and button states
+            state.filledPositions = 0;
+            updateNumberButtonStates();
         }
 
         // Reset puzzle
